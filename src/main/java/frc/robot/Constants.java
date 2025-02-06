@@ -4,8 +4,6 @@
 
 package frc.robot;
 
-import frc.robot.subsystems.MOTORSubsystem;
-
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide
  * numerical or boolean
@@ -27,7 +25,7 @@ public final class Constants {
     public static final int m_IntakeMotor1Id = 11;
     public static final int m_IntakeMotor2Id = 13;
 
-    public static final double m_IntakeMotor1speed = 5;
+    public static final double m_IntakeMotor1speed = 2;
     public static final double m_IntakeMotor2speed = 6;
   }
 

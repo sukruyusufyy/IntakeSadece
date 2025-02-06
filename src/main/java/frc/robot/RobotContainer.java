@@ -68,33 +68,21 @@ public class RobotContainer {
     testPS5.L1().toggleOnFalse(m_intake.ObjectStopCommand());
     testPS5.L2().toggleOnTrue(m_intake.ReverseObjectCommand());
     testPS5.L2().toggleOnFalse(m_intake.ObjectStopCommand());
+    testPS5.R2().onTrue(m_intake.conveyorAlgCommand());
+    testPS5.R1().onTrue(m_intake.intakeAlgCommand());
 
-    testPS5.R1().whileTrue(m_intake.runIntakePIDfifteenCommand());
-    testPS5.R1().whileFalse(m_intake.runIntakeStopCommand());
-    testPS5.R2().whileTrue(m_intake.runIntakePIDtenCommand());
-    testPS5.R2().whileFalse(m_intake.runIntakeStopCommand());
+  
     
     
-    /* 
-      testPS5.povLeft().onTrue(
-      new InstantCommand(() -> {
-      m_intake.RunIntakeIn();
-      }));
-      testPS5.povLeft().onFalse(
+    /*
+      testPS5.R1().onFalse(
       new InstantCommand(() -> {
       m_intake.RunIntakeStop();
-      }));
+      })); */
       
-      testPS5.povRight().onTrue(
-      new InstantCommand(() -> {
-      m_intake.RunIntakeOut();
-      
-      }));
-      testPS5.povRight().onFalse(
-      new InstantCommand(() -> {
-      m_intake.RunIntakeStop();
-      }));
-     */
+    
+  
+     
   }
 
   /**

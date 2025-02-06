@@ -27,21 +27,21 @@ public class IntakeSubsystem extends SubsystemBase {
 
   private final SparkMax m_IntakeSparkMax1 = new SparkMax(IntakeConstans.m_IntakeMotor1Id, MotorType.kBrushless);
   private final SparkMax m_IntakeSparkMax2 = new SparkMax(IntakeConstans.m_IntakeMotor2Id, MotorType.kBrushless);
+  private final SparkMax m_IntakeWheels = new SparkMax(40, MotorType.kBrushless);
 private final SparkClosedLoopController  closedLoopController = m_IntakeSparkMax1.getClosedLoopController();
  private final SparkMaxConfig motorConfig = new SparkMaxConfig();
   private final AbsoluteEncoder m_boreencoder;
+  private final AbsoluteEncoder m_grapperBore;
   private double m_lastVoltage = 0;
-private final PIDController pid = new PIDController(1, 0, 0);
+private final PIDController pid = new PIDController(0.05, 0, 0.01);
+private final PIDController pidIntake = new PIDController(0.05, 0, 0.01);
 
   public void RunIntakeIn(  ) { // ıntake motor gücü (+ yönlü)
-    if(m_IntakeSparkMax1.getOutputCurrent()<5)
-    {
+   
       m_lastVoltage = IntakeConstans.m_IntakeMotor1speed;
-      m_IntakeSparkMax1.setVoltage(m_lastVoltage);
-    }
-    else{
-     m_lastVoltage =0;
-    }
+      m_IntakeWheels.setVoltage(m_lastVoltage);
+    
+   
   
     // System.out.println("Deneme");
   }
@@ -49,26 +49,30 @@ private final PIDController pid = new PIDController(1, 0, 0);
   public void RunIntakeOut() { // ıntake motor gücü (-yön)
     
     m_lastVoltage = IntakeConstans.m_IntakeMotor1speed;
-    m_IntakeSparkMax1.setVoltage(-m_lastVoltage);
+    m_IntakeWheels.setVoltage(-m_lastVoltage);
   }
 
   public void RunIntakeStop() {
     m_lastVoltage = 0;
-    m_IntakeSparkMax1.setVoltage(m_lastVoltage);
+    m_IntakeWheels.setVoltage(m_lastVoltage);
+    m_IntakeSparkMax2.setVoltage(0);
 
   }
-public void runIntakefifteenPID(){
+
+public void IntakeAlg(){
  
-   m_IntakeSparkMax1.setVoltage( MathUtil.clamp(-pid.calculate(m_boreencoder.getPosition(), 42), -5, 5));
-  System.out.println("PID");
-  //closedLoopController.setReference(50, ControlType.kPosition, ClosedLoopSlot.kSlot0);
-}
-public void runIntaketenPID(){
  
-  m_IntakeSparkMax1.setVoltage( MathUtil.clamp(-pid.calculate(m_boreencoder.getPosition(), 55), -5, 5));
+  m_IntakeSparkMax1.setVoltage(  MathUtil.clamp(pidIntake.calculate(m_boreencoder.getPosition(),330), -3, 3
+  ));
+
  System.out.println("PID");
  //closedLoopController.setReference(50, ControlType.kPosition, ClosedLoopSlot.kSlot0);
 }
+public void ConveyorAlg(){
+  m_IntakeSparkMax2.setVoltage( MathUtil.clamp(-pid.calculate(m_grapperBore.getPosition(), 233), -3, 3));
+
+}
+
   /*-----------------2.SparkMax------------------- */
 
   public void TakeObject() {
@@ -91,21 +95,8 @@ public void runIntaketenPID(){
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem() {
    
-     motorConfig.closedLoop
-        .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-        // Set PID values for position control. We don't need to pass a closed loop
-        // slot, as it will default to slot 0.
-        .p(0.1)
-        .i(0)
-        .d(0)
-        .outputRange(-1, 1)
-        // Set PID values for velocity control in slot 1
-        .p(0.0001, ClosedLoopSlot.kSlot1)
-        .i(0, ClosedLoopSlot.kSlot1)
-        .d(0, ClosedLoopSlot.kSlot1)
-      
-        .outputRange(-1, 1, ClosedLoopSlot.kSlot1);
-
+    
+m_grapperBore= m_IntakeSparkMax2.getAbsoluteEncoder();
     m_boreencoder = m_IntakeSparkMax1.getAbsoluteEncoder();
   }
 
@@ -114,9 +105,13 @@ public void runIntaketenPID(){
   
     // This method will be called once per scheduler run
     m_IntakeSparkMax1.setVoltage(0);
-    SmartDashboard.putNumber("Intake Amper Value  ", m_IntakeSparkMax1.getOutputCurrent());
-   SmartDashboard.putNumber("Intake Open Bore", m_boreencoder.getPosition());
-   SmartDashboard.putNumber("Velocity",  MathUtil.clamp(pid.calculate(m_boreencoder.getPosition(), 16), -5, 5));
+    
+    SmartDashboard.putNumber("Intake Amper Value  ", m_IntakeWheels.getOutputCurrent());
+   SmartDashboard.putNumber("Intake  Open Bore", m_boreencoder.getPosition());
+   SmartDashboard.putNumber("Grapper  Open Bore", m_grapperBore.getPosition());
+   SmartDashboard.putNumber("Intake Alg Take Velocity",  MathUtil.clamp(pidIntake.calculate(m_boreencoder.getPosition(),330), -3, 3));
+
+   SmartDashboard.putNumber("Grapper Alg Take Velocity",  MathUtil.clamp(pid.calculate(m_grapperBore.getPosition(),232), -3, 3));
     double outputCurrent = m_IntakeSparkMax1.getOutputCurrent();
    
     // System.out.println("Motor tarafından çekilen akım: " + outputCurrent + "
@@ -153,12 +148,7 @@ public void runIntaketenPID(){
   public Command runIntakeStopOnceCommand() {
     return run(() -> RunIntakeStop());
   }
-  public Command runIntakePIDfifteenCommand() {
-    return run(() -> runIntakefifteenPID());
-  }
-  public Command runIntakePIDtenCommand() {
-    return run(() -> runIntaketenPID());
-  }
+
 
   /*--------------2.SparkMax----------- */
 
@@ -184,6 +174,13 @@ public void runIntaketenPID(){
 
   public Command ObjectStopOnceCommand() {
     return run(() -> ObjectStopOnceCommand());
+  }
+  
+  public Command conveyorAlgCommand() {
+    return run(() -> ConveyorAlg());
+  }
+  public Command intakeAlgCommand() {
+    return run(() -> IntakeAlg());
   }
 
 }
